@@ -11,7 +11,8 @@
 #pragma once
 
 // If true, will use the same random numbers each run
-#define DETERMINISTIC() false
+#define DETERMINISTIC() true
+#define OUTPUT_HDR() true
 
 #include <chrono>
 #include <string>
@@ -333,14 +334,26 @@ inline float RandomFloat01(pcg32_random_t& rng)
 inline void SaveTextures(const BlueNoiseTexturesND& textures, const char* fileNamePattern)
 {
     // turn ranks into pixel values
+#if OUTPUT_HDR()
+    std::vector<float> pixels(textures.pixels.size());
+#else
     std::vector<unsigned char> pixels(textures.pixels.size());
+#endif // OUTPUT_HDR()
     for (size_t index = 0; index < pixels.size(); ++index)
     {
+#if OUTPUT_HDR()
+        float* dest = &pixels[index];
+#else
         unsigned char* dest = &pixels[index];
+#endif // OUTPUT_HDR()
         const Pixel& src = textures.pixels[index];
 
         float rankPercent = float(src.rank) / float(pixels.size());
+#if OUTPUT_HDR()
+        *dest = (float)Clamp(rankPercent, 0.0f, 1.0f);
+#else
         *dest = (unsigned char)Clamp(rankPercent * 256.0f, 0.0f, 255.0f);
+#endif // OUTPUT_HDR()
     }
 
     // save images
@@ -351,7 +364,11 @@ inline void SaveTextures(const BlueNoiseTexturesND& textures, const char* fileNa
         if (textures.dims.size() == 1)
         {
             sprintf_s(fileName, fileNamePattern, 0);
+#if OUTPUT_HDR()
+            stbi_write_hdr(fileName, textures.dims[0], 1, 1, pixels.data());
+#else
             stbi_write_png(fileName, textures.dims[0], 1, 1, pixels.data(), 0);
+#endif // OUTPUT_HDR()
         }
         // otherwise save x/y images. the other dimensions are flattened into 1d.
         else
@@ -362,7 +379,11 @@ inline void SaveTextures(const BlueNoiseTexturesND& textures, const char* fileNa
             while (pixelStart < textures.pixels.size())
             {
                 sprintf_s(fileName, fileNamePattern, imageIndex);
+#if OUTPUT_HDR()
+                stbi_write_hdr(fileName, textures.dims[0], textures.dims[1], 1, &pixels[pixelStart]);
+#else
                 stbi_write_png(fileName, textures.dims[0], textures.dims[1], 1, &pixels[pixelStart], 0);
+#endif // OUTPUT_HDR()
                 pixelStart += pixelStride;
                 imageIndex++;
             }

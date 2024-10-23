@@ -9,9 +9,9 @@
 */
 
 // Size of the texture generated
-static const int c_imageSizeX = 128;
-static const int c_imageSizeY = 128;
-static const int c_imageSizeZ = 64;
+static const int c_imageSizeX = 16;
+static const int c_imageSizeY = 16;
+static const int c_imageSizeZ = 16;
 static const int c_imageSizeW = 1;
 
 // Settings for the void and cluster algorithm
@@ -32,10 +32,18 @@ int main(int argc, char** argv)
         _2Dx1Dx1D::Maker<c_imageSizeX, c_imageSizeY, c_imageSizeZ, c_imageSizeW, c_energySigma, c_energySigma, c_energySigma, c_energySigma> object;
         BlueNoiseTexturesND textures = object.Make();
 
+#if OUTPUT_HDR()
+        // save it out as hdrs
+#else
         // save it out as pngs
+#endif // OUTPUT_HDR()
         char buffer[1024];
         sprintf_s(buffer, "out/stbn_scalar_2Dx1Dx1D_%ix%ix%ix%i", c_imageSizeX, c_imageSizeY, c_imageSizeZ, c_imageSizeW);
+#if OUTPUT_HDR()
+        strcat_s(buffer, "_%i.hdr");
+#else
         strcat_s(buffer, "_%i.png");
+#endif // OUTPUT_HDR()
         SaveTextures(textures, buffer);
 
         sprintf_s(buffer, "python ../analyzeVVSTBN.py out/stbn_scalar_2Dx1Dx1D_%ix%ix%ix%i %i", c_imageSizeX, c_imageSizeY, c_imageSizeZ, c_imageSizeW, c_imageSizeZ);
